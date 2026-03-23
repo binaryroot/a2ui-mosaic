@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.a2ui.mosaic.state.SurfaceManagerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-03-23T13:14:35" hostname="104c5d5889eb" time="0.017">
+  <properties/>
+  <testcase name="load example from JSON()" classname="org.a2ui.mosaic.state.SurfaceManagerTest" time="0.002"/>
+  <testcase name="update components on non-existent surface throws()" classname="org.a2ui.mosaic.state.SurfaceManagerTest" time="0.007"/>
+  <testcase name="create surface via message()" classname="org.a2ui.mosaic.state.SurfaceManagerTest" time="0.001"/>
+  <testcase name="delete surface()" classname="org.a2ui.mosaic.state.SurfaceManagerTest" time="0.001"/>
+  <testcase name="update components via message()" classname="org.a2ui.mosaic.state.SurfaceManagerTest" time="0.001"/>
+  <testcase name="multiple surfaces()" classname="org.a2ui.mosaic.state.SurfaceManagerTest" time="0.001"/>
+  <testcase name="client message callback is invoked()" classname="org.a2ui.mosaic.state.SurfaceManagerTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

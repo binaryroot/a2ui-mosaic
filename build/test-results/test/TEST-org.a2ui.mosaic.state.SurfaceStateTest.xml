@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.a2ui.mosaic.state.SurfaceStateTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-03-23T13:14:35" hostname="104c5d5889eb" time="0.014">
+  <properties/>
+  <testcase name="update data model at specific path()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.001"/>
+  <testcase name="resolve literal boolean()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.0"/>
+  <testcase name="set string list value in data model()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.001"/>
+  <testcase name="resolve null dynamic value returns empty()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.001"/>
+  <testcase name="dispatch action with context resolution()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.001"/>
+  <testcase name="set string value in data model()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.001"/>
+  <testcase name="resolve literal number()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.0"/>
+  <testcase name="resolve literal string()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.0"/>
+  <testcase name="resolve path from data model()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.001"/>
+  <testcase name="get data model as map()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.001"/>
+  <testcase name="set number value in data model()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.0"/>
+  <testcase name="set boolean value in data model()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.0"/>
+  <testcase name="resolve nested path from data model()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.0"/>
+  <testcase name="resolve missing path returns default()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.0"/>
+  <testcase name="create surface and add components()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.001"/>
+  <testcase name="version increments on updates()" classname="org.a2ui.mosaic.state.SurfaceStateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

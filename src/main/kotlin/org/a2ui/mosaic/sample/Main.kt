@@ -1,5 +1,6 @@
 package org.a2ui.mosaic.sample
 
+import com.jakewharton.mosaic.NonInteractivePolicy
 import com.jakewharton.mosaic.runMosaicBlocking
 import org.a2ui.mosaic.*
 import org.a2ui.mosaic.state.SurfaceManager
@@ -7,41 +8,97 @@ import org.a2ui.mosaic.state.SurfaceManager
 /**
  * Main entry point for the A2UI Mosaic terminal renderer.
  *
+ * IMPORTANT: Mosaic requires a real TTY (interactive terminal) to function.
+ * Gradle's `run` task does NOT provide a TTY. You must either:
+ *
+ *   1. Build and run the distribution:
+ *      ./gradlew installDist
+ *      ./build/install/a2ui-mosaic/bin/a2ui-mosaic
+ *
+ *   2. Or run the fat JAR directly:
+ *      ./gradlew shadowJar
+ *      java -jar build/libs/a2ui-mosaic-0.1.0-all.jar
+ *
+ *   3. Or use --non-interactive flag for a static one-shot render:
+ *      ./gradlew run --args="--non-interactive"
+ *
  * Usage:
- *   ./gradlew run                           # Run with built-in login form example
- *   ./gradlew run --args="path/to/file.json" # Run with a custom A2UI example file
+ *   a2ui-mosaic                               # Run with built-in login form example
+ *   a2ui-mosaic path/to/file.json             # Run with a custom A2UI example file
+ *   a2ui-mosaic --non-interactive              # Render once without TTY (for CI/testing)
+ *   a2ui-mosaic --non-interactive file.json    # Render a file once without TTY
  */
 fun main(args: Array<String>) {
-    val jsonContent = if (args.isNotEmpty()) {
-        // Load from file path
-        java.io.File(args[0]).readText()
+    val argList = args.toMutableList()
+    val nonInteractive = argList.remove("--non-interactive") || argList.remove("-n")
+
+    val jsonContent = if (argList.isNotEmpty()) {
+        val file = java.io.File(argList[0])
+        if (!file.exists()) {
+            System.err.println("Error: File not found: ${argList[0]}")
+            System.exit(1)
+        }
+        file.readText()
     } else {
-        // Load built-in login form example
         object {}.javaClass.getResource("/examples/login-form.json")?.readText()
             ?: getBuiltInLoginForm()
     }
 
-    println("A2UI Mosaic Terminal Renderer v0.1.0")
-    println("Loading A2UI surface...")
-
     val surfaceManager = SurfaceManager()
     surfaceManager.loadExample(jsonContent)
 
-    // Set up action handler to print to stderr
     surfaceManager.onClientMessage = { message ->
         System.err.println("[A2UI Action] $message")
     }
 
-    runMosaicBlocking {
-        A2uiMosaicApp(
-            surfaceManager = surfaceManager,
-            onAction = { message ->
-                System.err.println("[A2UI Action] $message")
-            },
-            onQuit = {
-                System.err.println("Quitting A2UI Mosaic...")
-            }
-        )
+    if (nonInteractive) {
+        // Non-interactive mode: render once and exit.
+        // Uses Mosaic's Ignore policy so it runs with a fake terminal.
+        System.err.println("A2UI Mosaic Terminal Renderer v0.1.0 (non-interactive mode)")
+        runMosaicBlocking(onNonInteractive = NonInteractivePolicy.Ignore) {
+            A2uiMosaicApp(
+                surfaceManager = surfaceManager,
+                onAction = { message ->
+                    System.err.println("[A2UI Action] $message")
+                },
+                onQuit = {}
+            )
+        }
+    } else {
+        // Interactive mode: requires a real TTY.
+        // If no TTY is available, prints a helpful error message.
+        val success = runMosaicBlocking(onNonInteractive = NonInteractivePolicy.Return) {
+            A2uiMosaicApp(
+                surfaceManager = surfaceManager,
+                onAction = { message ->
+                    System.err.println("[A2UI Action] $message")
+                },
+                onQuit = {
+                    System.err.println("Quitting A2UI Mosaic...")
+                }
+            )
+        }
+
+        if (!success) {
+            System.err.println("""
+                |
+                |ERROR: No interactive terminal (TTY) detected.
+                |
+                |Mosaic requires a real terminal to handle keyboard input and rendering.
+                |Gradle's `run` task does NOT provide a TTY.
+                |
+                |To run interactively, build the distribution first:
+                |
+                |  ./gradlew installDist
+                |  ./build/install/a2ui-mosaic/bin/a2ui-mosaic
+                |
+                |Or use --non-interactive for a static one-shot render:
+                |
+                |  ./gradlew run --args="--non-interactive"
+                |
+            """.trimMargin())
+            System.exit(1)
+        }
     }
 }
 

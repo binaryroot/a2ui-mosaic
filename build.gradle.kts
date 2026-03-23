@@ -42,3 +42,9 @@ kotlin {
 tasks.test {
     useJUnitPlatform()
 }
+
+// Connect stdin to the run task so Mosaic can detect TTY.
+// Note: This helps but may not fully provide a TTY — use installDist for best results.
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+}

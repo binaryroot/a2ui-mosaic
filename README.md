@@ -4,7 +4,7 @@ A2UI Mosaic is a Kotlin library that bridges the [A2UI 0.9 specification](https:
 
 ## Features
 
-- **Full A2UI v0.9 Support**: Implements the A2UI protocol including `createSurface`, `updateComponents`, and `updateDataModel`.
+- **Full A2UI v0.9 Support**: Implements the A2UI protocol including `createSurface`, `updateComponents`, `updateDataModel`, and `deleteSurface`.
 - **Interactive Terminal UI**: Renders A2UI components using Mosaic's Compose runtime for the terminal.
 - **Keyboard Navigation**: Built-in focus management with `Tab` / `Shift+Tab` navigation between interactive elements.
 - **Data Binding**: Resolves A2UI JSON Pointer paths (`/path/to/data`) against a reactive data model.
@@ -12,47 +12,74 @@ A2UI Mosaic is a Kotlin library that bridges the [A2UI 0.9 specification](https:
 
 ## Supported Components
 
-- `Text` (with h1, h2, h3, caption variants)
-- `TextField` (shortText, longText, obscured)
-- `Button` (primary, default, borderless)
-- `CheckBox`
-- `ChoicePicker` (single and multiple selection)
-- `Slider`
-- `DateTimeInput`
-- `Row` & `Column`
-- `Card`
-- `Divider`
-- `Tabs`
-- `Icon` & `Image` (rendered as text placeholders)
+| Component | Terminal Rendering |
+|---|---|
+| `Text` | Styled text with h1/h2/h3/caption variants |
+| `TextField` | Bordered input box with cursor, supports `shortText`, `longText`, `obscured` |
+| `Button` | Bracketed label with focus highlight, supports `primary`, `default`, `borderless` |
+| `CheckBox` | `[x]` / `[ ]` toggle with label |
+| `ChoicePicker` | Radio `(*)` or checkbox `[x]` list, single/multi selection |
+| `Slider` | ASCII progress bar with value display |
+| `DateTimeInput` | Text input with date/time type hint |
+| `Row` / `Column` | Horizontal / vertical layout |
+| `Card` | Bordered container |
+| `Divider` | Horizontal or vertical line |
+| `Tabs` | Tab header bar with active content panel |
+| `Icon` | ASCII icon representation (e.g., `[v]`, `[x]`, `[*]`) |
+| `Image` | URL placeholder text |
+| `List` | Vertical or horizontal list layout |
+| `Modal` | Shows entry point child |
 
-## Usage
+## Running
 
-### Running the Sample Application
+> **Important**: Mosaic requires a real interactive terminal (TTY) to handle keyboard input and ANSI rendering. Gradle's `run` task does **not** provide a TTY.
 
-The project includes a sample application that renders a login form defined in A2UI JSON format.
+### Option 1: Build and run the distribution (recommended)
 
 ```bash
-# Run the built-in login form example
-./gradlew run
-
-# Run with a custom A2UI JSON file
-./gradlew run --args="path/to/your-form.json"
+./gradlew installDist
+./build/install/a2ui-mosaic/bin/a2ui-mosaic
 ```
 
-### Using as a Library
+### Option 2: Run with a custom A2UI JSON file
 
-You can use A2UI Mosaic programmatically to build terminal UIs dynamically:
+```bash
+./build/install/a2ui-mosaic/bin/a2ui-mosaic path/to/your-form.json
+```
+
+### Option 3: Non-interactive mode (for CI, testing, or Gradle)
+
+This renders the form once as a static snapshot and exits:
+
+```bash
+./gradlew run --args="--non-interactive"
+./gradlew run --args="--non-interactive path/to/form.json"
+```
+
+### Keyboard Controls
+
+| Key | Action |
+|---|---|
+| `Tab` | Move focus to next interactive element |
+| `Shift+Tab` | Move focus to previous interactive element |
+| `Enter` | Activate button / submit / move to next field |
+| `Space` | Toggle checkbox / activate button |
+| `Backspace` | Delete last character in text field |
+| Any character | Type into focused text field |
+| `Ctrl+C` | Quit |
+
+## Using as a Library
 
 ```kotlin
+import com.jakewharton.mosaic.NonInteractivePolicy
 import com.jakewharton.mosaic.runMosaicBlocking
 import org.a2ui.mosaic.A2uiMosaicApp
 import org.a2ui.mosaic.state.SurfaceManager
 
 fun main() {
-    // 1. Create a SurfaceManager
     val manager = SurfaceManager()
     
-    // 2. Load A2UI messages (from JSON string or programmatically)
+    // Load A2UI messages from JSON
     manager.loadExample("""
     {
       "messages": [
@@ -68,26 +95,39 @@ fun main() {
             "components": [
               {
                 "id": "root",
+                "component": "Column",
+                "children": ["greeting", "name-field"]
+              },
+              {
+                "id": "greeting",
                 "component": "Text",
-                "text": "Hello Terminal!"
+                "text": "Hello Terminal!",
+                "variant": "h1"
+              },
+              {
+                "id": "name-field",
+                "component": "TextField",
+                "label": "Your Name",
+                "value": {"path": "/name"}
               }
             ]
+          }
+        },
+        {
+          "updateDataModel": {
+            "surfaceId": "my-form",
+            "value": { "name": "" }
           }
         }
       ]
     }
     """)
 
-    // 3. Render the UI using Mosaic
     runMosaicBlocking {
         A2uiMosaicApp(
             surfaceManager = manager,
             onAction = { clientMessageJson ->
-                // Send this JSON back to your server
-                println("Action triggered: $clientMessageJson")
-            },
-            onQuit = {
-                // Handle quit (Ctrl+Q)
+                println("Action: $clientMessageJson")
             }
         )
     }
@@ -96,19 +136,38 @@ fun main() {
 
 ## Architecture
 
-- **`org.a2ui.mosaic.model`**: Kotlinx Serialization models for the A2UI v0.9 JSON schema.
-- **`org.a2ui.mosaic.state`**: State management (`SurfaceManager`, `SurfaceState`) that handles data binding and reactive updates.
-- **`org.a2ui.mosaic.render`**: Mosaic `@Composable` functions that translate A2UI components into terminal UI elements.
-- **`org.a2ui.mosaic.focus`**: Keyboard input handling and focus traversal logic.
+```
+org.a2ui.mosaic
+├── model/           # A2UI v0.9 JSON schema models (kotlinx.serialization)
+│   ├── DynamicValue.kt   # Literal values, path references, function calls
+│   ├── Action.kt          # Event and function call actions
+│   ├── Component.kt       # All 16 component types with custom deserializer
+│   └── Message.kt         # Server-to-client and client-to-server messages
+├── state/           # Reactive state management
+│   ├── SurfaceState.kt    # Per-surface state with data binding
+│   └── SurfaceManager.kt  # Multi-surface orchestration
+├── render/          # Mosaic @Composable renderers
+│   ├── A2uiRenderer.kt    # Component-to-terminal rendering
+│   └── InputHandler.kt    # Keyboard input routing
+├── focus/           # Focus traversal
+│   └── FocusManager.kt    # Tab/Shift+Tab navigation
+├── A2uiMosaic.kt    # Main composable entry point
+└── sample/          # Example applications
+    ├── Main.kt             # CLI runner
+    └── ProgrammaticExample.kt  # API usage example
+```
 
 ## Building
 
 ```bash
-# Compile the project
+# Compile
 ./gradlew build
 
-# Run tests
+# Run tests (58 tests)
 ./gradlew test
+
+# Build distribution
+./gradlew installDist
 ```
 
 ## License
